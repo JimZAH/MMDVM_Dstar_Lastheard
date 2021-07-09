@@ -101,6 +101,7 @@ func main() {
 		if res != 0 {
 			prev = msg
 			if message_enable {
+				stat.sentMessages++
 				firemsg(&msg)
 				if periodic_enable && stat.sentMessages%periodic_message == 0 {
 					time.Sleep(2 * time.Second)
@@ -109,7 +110,6 @@ func main() {
 					msg = prev
 				}
 			}
-			stat.sentMessages++
 			// For now just post the stats everytime there's a change.
 			// TODO: Send this to syslog
 			fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
