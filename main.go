@@ -9,7 +9,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
-var (
+const (
 	delay    = 1 * time.Second
 	endpoint = "http://gb7nb.ddns.net/dstarrepeater/local_tx.php"
 	fqdn     = "http://gb7nb.ddns.net/*"
