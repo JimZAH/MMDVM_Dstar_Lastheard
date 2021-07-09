@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gocolly/colly"
 )
 
 const (
-	delay    = 1 * time.Second
-	endpoint = "http://gb7nb.ddns.net/dstarrepeater/local_tx.php"
-	fqdn     = "http://gb7nb.ddns.net/*"
-	webhook  = "XXX"
+	delay            = 1 * time.Second
+	endpoint         = "http://gb7nb.ddns.net/dstarrepeater/local_tx.php"
+	fqdn             = "http://gb7nb.ddns.net/*"
+	message_enable   = true
+	periodic_enable  = true
+	periodic_message = 5
+	webhook          = "XXX"
 )
 
 type Lastheard struct {
@@ -22,8 +26,8 @@ type Lastheard struct {
 }
 
 type Stats struct {
-	checks       int64
-	sentMessages int64
+	checks       int
+	sentMessages int
 }
 
 // Fire a message to mattermost
@@ -39,7 +43,6 @@ func firemsg(m *[]byte) {
 	}
 
 	defer resp.Body.Close()
-
 }
 
 func main() {
@@ -97,7 +100,15 @@ func main() {
 
 		if res != 0 {
 			prev = msg
-			firemsg(&msg)
+			if message_enable {
+				firemsg(&msg)
+				if periodic_enable && stat.sentMessages%periodic_message == 0 {
+					time.Sleep(2 * time.Second)
+					msg = []byte(`{"text": "######STATS######\nChecks: ` + strconv.Itoa(stat.checks) + `\nMessages Sent: ` + strconv.Itoa(stat.sentMessages) + `"}`)
+					firemsg(&msg)
+					msg = prev
+				}
+			}
 			stat.sentMessages++
 			// For now just post the stats everytime there's a change.
 			// TODO: Send this to syslog
