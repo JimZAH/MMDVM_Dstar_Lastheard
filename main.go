@@ -31,12 +31,13 @@ type Lastheard struct {
 
 type Queue struct {
 	messages []byte
+	number   int
+	timer    int
 }
 
 type Stats struct {
 	checks       int
 	sentMessages int
-	timer        int
 }
 
 // Fire a message to mattermost
@@ -122,9 +123,12 @@ func main() {
 				stat.sentMessages++
 				if !queued_messages {
 					firemsg(&msg)
+					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
 				} else {
 					job.messages = msg
 					jobqueue = append(jobqueue, job)
+					job.number++
+					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\nMessages Queued: ", job.number, "\n######END########")
 				}
 				if periodic_enable && stat.sentMessages%periodic_message == 0 {
 					time.Sleep(2 * time.Second)
@@ -132,14 +136,11 @@ func main() {
 					firemsg(&msg)
 				}
 			}
-			// For now just post the stats everytime there's a change.
-			// TODO: Send this to syslog
-			fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
 		}
-		stat.timer++
+		job.timer++
 		// Check if we have any messages in the queue
-		if stat.timer > queued_frequency/2 && len(jobqueue) > 0 {
-			stat.timer = 0
+		if job.timer > queued_frequency/2 && len(jobqueue) > 0 {
+			job.timer = 0
 			jobs(&jobqueue)
 		}
 		time.Sleep(2 * time.Second)
