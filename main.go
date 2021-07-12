@@ -16,18 +16,27 @@ const (
 	fqdn             = "http://gb7nb.ddns.net/*"
 	message_enable   = true
 	periodic_enable  = true
-	periodic_message = 5
+	periodic_message = 10
+	queued_frequency = 500
+	queued_messages  = true
 	webhook          = "XXX"
 )
+
+var jobqueue []Queue
 
 type Lastheard struct {
 	date     string
 	callsign string
 }
 
+type Queue struct {
+	messages []byte
+}
+
 type Stats struct {
 	checks       int
 	sentMessages int
+	timer        int
 }
 
 // Fire a message to mattermost
@@ -45,7 +54,16 @@ func firemsg(m *[]byte) {
 	defer resp.Body.Close()
 }
 
+// Process queued messages
+func jobs(q *[]Queue) {
+	for i := 0; i < len(*q); i++ {
+		firemsg(&(*q)[i].messages)
+	}
+	jobqueue = nil
+}
+
 func main() {
+	var job Queue
 	var lh []Lastheard
 	var msg []byte
 	var prev []byte
@@ -102,7 +120,12 @@ func main() {
 			prev = msg
 			if message_enable {
 				stat.sentMessages++
-				firemsg(&msg)
+				if !queued_messages {
+					firemsg(&msg)
+				} else {
+					job.messages = msg
+					jobqueue = append(jobqueue, job)
+				}
 				if periodic_enable && stat.sentMessages%periodic_message == 0 {
 					time.Sleep(2 * time.Second)
 					msg = []byte(`{"text": "######STATS######\nChecks: ` + strconv.Itoa(stat.checks) + `\nMessages Sent: ` + strconv.Itoa(stat.sentMessages) + `\n######END########"}`)
@@ -112,6 +135,12 @@ func main() {
 			// For now just post the stats everytime there's a change.
 			// TODO: Send this to syslog
 			fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
+		}
+		stat.timer++
+		// Check if we have any messages in the queue
+		if stat.timer > queued_frequency/2 && len(jobqueue) > 0 {
+			stat.timer = 0
+			jobs(&jobqueue)
 		}
 		time.Sleep(2 * time.Second)
 	}
