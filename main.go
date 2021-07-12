@@ -105,9 +105,8 @@ func main() {
 				firemsg(&msg)
 				if periodic_enable && stat.sentMessages%periodic_message == 0 {
 					time.Sleep(2 * time.Second)
-					msg = []byte(`{"text": "######STATS######\nChecks: ` + strconv.Itoa(stat.checks) + `\nMessages Sent: ` + strconv.Itoa(stat.sentMessages) + `"}`)
+					msg = []byte(`{"text": "######STATS######\nChecks: ` + strconv.Itoa(stat.checks) + `\nMessages Sent: ` + strconv.Itoa(stat.sentMessages) + `\n######END########"}`)
 					firemsg(&msg)
-					msg = prev
 				}
 			}
 			// For now just post the stats everytime there's a change.
