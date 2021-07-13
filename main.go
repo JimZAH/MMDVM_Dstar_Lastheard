@@ -142,6 +142,7 @@ func main() {
 		if job.timer > queued_frequency/2 && len(jobqueue) > 0 {
 			job.timer, job.number = 0, 0
 			jobs(&jobqueue)
+			fmt.Println("Queue processed")
 		}
 		time.Sleep(2 * time.Second)
 	}
