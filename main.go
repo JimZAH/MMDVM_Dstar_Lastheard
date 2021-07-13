@@ -140,7 +140,7 @@ func main() {
 		job.timer++
 		// Check if we have any messages in the queue
 		if job.timer > queued_frequency/2 && len(jobqueue) > 0 {
-			job.timer = 0
+			job.timer, job.number = 0, 0
 			jobs(&jobqueue)
 		}
 		time.Sleep(2 * time.Second)
