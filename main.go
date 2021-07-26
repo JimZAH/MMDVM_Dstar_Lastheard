@@ -37,6 +37,7 @@ type Queue struct {
 
 type Stats struct {
 	checks       int
+	errors       int
 	sentMessages int
 }
 
@@ -103,6 +104,7 @@ func main() {
 		err := c.Visit(endpoint)
 		if err != nil {
 			fmt.Println("There was an error loading the stats for GB7NB: ", err)
+			stat.errors++
 		}
 		c.Wait()
 
@@ -123,12 +125,12 @@ func main() {
 				stat.sentMessages++
 				if !queued_messages {
 					firemsg(&msg)
-					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
+					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nErrors: ", stat.errors, "\nMessages Sent: ", stat.sentMessages, "\n######END########")
 				} else {
 					job.messages = msg
 					jobqueue = append(jobqueue, job)
 					job.number++
-					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nMessages Sent: ", stat.sentMessages, "\nMessages Queued: ", job.number, "\n######END########")
+					fmt.Println("######STATS######\nChecks: ", stat.checks, "\nErrors: ", stat.errors, "\nMessages Sent: ", stat.sentMessages, "\nMessages Queued: ", job.number, "\n######END########")
 				}
 				if periodic_enable && stat.sentMessages%periodic_message == 0 {
 					time.Sleep(2 * time.Second)
